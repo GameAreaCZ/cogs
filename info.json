@@ -1,5 +1,7 @@
 {
-    "author": "GameArea.cz",
+    "author": [
+        "GameArea.cz#8803"
+    ],
     "install_msg": "Děkuji za přidání tohoto repositáře.",
     "name": "GameArea.cz Cog's",
     "short": "Personal edits from GameArea.cz of RedBot Cogs.",
