@@ -293,7 +293,7 @@ class Giveaways(commands.Cog):
             emoji = self.bot.get_emoji(emoji)
         embed = discord.Embed(
             title=f"{f'{winners}x ' if winners > 1 else ''}{prize}",
-            description=f"{description}\n\nReaguj za pomocí {emoji} pro vstup go gw.\n\n**Hostuje:** {ctx.author.mention}\n\nKončí: <t:{int(end.timestamp())}:R>",
+            description=f"{description}\n\nReaguj za pomocí {emoji} pro vstup do soutěže.\n\n**Hostuje:** {ctx.author.mention}\n\nKončí: <t:{int(end.timestamp())}:R>",
             color=await ctx.embed_color(),
         )
         if arguments["image"] is not None:
