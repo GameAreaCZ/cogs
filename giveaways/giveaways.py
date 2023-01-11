@@ -121,7 +121,7 @@ class Giveaways(commands.Cog):
             timestamp=datetime.now(timezone.utc),
         )
         embed.set_footer(
-            text=f"Reroll: {(await self.bot.get_prefix(msg))[-1]}gw reroll {giveaway.messageid} | Skončila v"
+            text=f"Vylosovat znovu: {(await self.bot.get_prefix(msg))[-1]}gw reroll {giveaway.messageid} | Skončila"
         )
         try:
             await msg.edit(
@@ -145,12 +145,12 @@ class Giveaways(commands.Cog):
         if giveaway.kwargs.get("announce"):
             announce_embed = discord.Embed(
                 title="Soutěž skončila",
-                description=f"Gratulace patří uživateli {f'{str(winners)} ' if winners > 1 else ''}výherce{'s' if winners > 1 else ''}, protože vyhrál [{giveaway.prize}]({msg.jump_url}).\n{txt}",
+                description=f"Gratulace patří {f'{str(winners)} ' if winners > 1 else ''}uživateli{'/ům' if winners > 1 else ''}, protože vyhrál [{giveaway.prize}]({msg.jump_url}).\n{txt}",
                 color=await self.bot.get_embed_color(channel_obj),
             )
 
             announce_embed.set_footer(
-                text=f"Reroll: {(await self.bot.get_prefix(msg))[-1]}gw reroll {giveaway.messageid}"
+                text=f"Vylosovat znovu: {(await self.bot.get_prefix(msg))[-1]}gw reroll {giveaway.messageid}"
             )
             await channel_obj.send(
                 content="Gratuluji " + ",".join([x.mention for x in winner_objs])
