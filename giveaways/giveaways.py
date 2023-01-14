@@ -165,7 +165,7 @@ class Giveaways(commands.Cog):
                 for winner in winner_objs:
                     with contextlib.suppress(discord.Forbidden):
                         await winner.send(
-                            f"Gratuluji! Vyhrál jsi {giveaway.prize} v soutěži v {guild}!"
+                            f"Gratuluji! Vyhrál jsi {giveaway.prize} v soutěži na Discord serveru {guild}!"
                         )
             async with self.config.custom(
                 GIVEAWAY_KEY, giveaway.guildid, int(giveaway.messageid)
