@@ -146,7 +146,7 @@ class Giveaways(commands.Cog):
         if giveaway.kwargs.get("announce"):
             announce_embed = discord.Embed(
                 title="Soutěž skončila",
-                description=f"Gratulace patří {f'{str(winners)} ' if winners > 1 else ''}výherci{'s' if winners > 1 else ''} z [{giveaway.prize}]({msg.jump_url}).\n{txt}",
+                description=f"Gratulace patří {f'{str(winners)} ' if winners > 1 else ''}výherci{'s' if winners > 1 else ''} o [{giveaway.prize}]({msg.jump_url}).\n{txt}",
                 color=await self.bot.get_embed_color(channel_obj),
             )
 
