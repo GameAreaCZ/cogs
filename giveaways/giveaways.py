@@ -100,14 +100,14 @@ class Giveaways(commands.Cog):
         winners = giveaway.draw_winner()
         winner_objs = None
         if winners is None:
-            txt = "Not enough entries to roll the giveaway."
+            txt = "Neodstatek vstupů pro zvolení vítěze."
         else:
             winner_objs = []
             txt = ""
             for winner in winners:
                 winner_obj = guild.get_member(winner)
                 if winner_obj is None:
-                    txt += f"{winner} (Not Found)\n"
+                    txt += f"{winner} (Nenalezeno)\n"
                 else:
                     txt += f"{winner_obj.mention}\n"
                     winner_objs.append(winner_obj)
@@ -125,7 +125,7 @@ class Giveaways(commands.Cog):
         )
         try:
             await msg.edit(
-                content="🎉 Giveaway Ended 🎉",
+                content="🎉 Soutěž skončila 🎉",
                 embed=embed,
             )
         except (discord.NotFound, discord.Forbidden) as exc:
@@ -145,8 +145,8 @@ class Giveaways(commands.Cog):
             return
         if giveaway.kwargs.get("announce"):
             announce_embed = discord.Embed(
-                title="Giveaway Ended",
-                description=f"Congratulations to the {f'{str(winners)} ' if winners > 1 else ''}winner{'s' if winners > 1 else ''} of [{giveaway.prize}]({msg.jump_url}).\n{txt}",
+                title="Soutěž skončila",
+                description=f"Gratulace patří {f'{str(winners)} ' if winners > 1 else ''}výherci{'s' if winners > 1 else ''} z [{giveaway.prize}]({msg.jump_url}).\n{txt}",
                 color=await self.bot.get_embed_color(channel_obj),
             )
 
@@ -154,7 +154,7 @@ class Giveaways(commands.Cog):
                 text=f"Reroll: {(await self.bot.get_prefix(msg))[-1]}gw reroll {giveaway.messageid}"
             )
             await channel_obj.send(
-                content="Congratulations " + ",".join([x.mention for x in winner_objs])
+                content="Gratuluji " + ",".join([x.mention for x in winner_objs])
                 if winner_objs is not None
                 else "",
                 embed=announce_embed,
@@ -166,7 +166,7 @@ class Giveaways(commands.Cog):
                 for winner in winner_objs:
                     with contextlib.suppress(discord.Forbidden):
                         await winner.send(
-                            f"Congratulations! You won {giveaway.prize} in the giveaway on {guild}!"
+                            f"Gratuluji! Vyhrál jsi {giveaway.prize} v soutěži na {guild}!"
                         )
             async with self.config.custom(
                 GIVEAWAY_KEY, giveaway.guildid, int(giveaway.messageid)
@@ -205,7 +205,7 @@ class Giveaways(commands.Cog):
         end = datetime.now(timezone.utc) + time
         embed = discord.Embed(
             title=f"{prize}",
-            description=f"\nReact with 🎉 to enter\n\n**Hosted by:** {ctx.author.mention}\n\nEnds: <t:{int(end.timestamp())}:R>",
+            description=f"\nReaguj za pomocí 🎉 pro vstup do soutěže\n\n**Hostuje:** {ctx.author.mention}\n\nKončí: <t:{int(end.timestamp())}:R>",
             color=await ctx.embed_color(),
         )
         msg = await channel.send(embed=embed)
@@ -306,7 +306,7 @@ class Giveaways(commands.Cog):
             emoji = self.bot.get_emoji(emoji)
         embed = discord.Embed(
             title=f"{f'{winners}x ' if winners > 1 else ''}{prize}",
-            description=f"{description}\n\nReact with {emoji} to enter\n\n**Hosted by:** {ctx.author.mention}\n\nEnds: <t:{int(end.timestamp())}:R>",
+            description=f"{description}\n\nReaguj za pomocí {emoji} pro vstup do soutěže\n\n**Hostuje:** {ctx.author.mention}\n\nKončí: <t:{int(end.timestamp())}:R>",
             color=await ctx.embed_color(),
         )
         if arguments["image"] is not None:
@@ -324,7 +324,7 @@ class Giveaways(commands.Cog):
                 if role is not None:
                     txt += f"{role.mention} "
         msg = await channel.send(
-            content=f"🎉 Giveaway 🎉{txt}",
+            content=f"🎉 Soutěž 🎉{txt}",
             embed=embed,
             allowed_mentions=discord.AllowedMentions(
                 roles=bool(arguments["mentions"]),
