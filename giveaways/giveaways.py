@@ -7,7 +7,7 @@ from typing import Optional
 
 import aiohttp
 import discord
-from redbot.core import Config, commands
+from redbot.core import Config, app_commands, commands
 from redbot.core.commands.converter import TimedeltaConverter
 from redbot.core.utils.chat_formatting import pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
@@ -24,7 +24,7 @@ GIVEAWAY_KEY = "giveaways"
 class Giveaways(commands.Cog):
     """Giveaway Commands"""
 
-    __version__ = "0.12.6"
+    __version__ = "0.13.0"
     __author__ = "flare"
 
     def format_help_for_context(self, ctx):
@@ -69,7 +69,7 @@ class Giveaways(commands.Cog):
                 await self.check_giveaways()
             except Exception as exc:
                 log.error("Exception in giveaway loop: ", exc_info=exc)
-            await asyncio.sleep(20)
+            await asyncio.sleep(15)
 
     def cog_unload(self) -> None:
         with contextlib.suppress(Exception):
@@ -116,19 +116,20 @@ class Giveaways(commands.Cog):
         winners = giveaway.kwargs.get("winners", 1) or 1
         embed = discord.Embed(
             title=f"{f'{winners}x ' if winners > 1 else ''}{giveaway.prize}",
-            description=f"Výherce:\n{txt}",
+            description=f"Winner(s):\n{txt}",
             color=await self.bot.get_embed_color(channel_obj),
             timestamp=datetime.now(timezone.utc),
         )
         embed.set_footer(
-            text=f"Vylosovat znovu: {(await self.bot.get_prefix(msg))[-1]}gw reroll {giveaway.messageid} | Skončila"
+            text=f"Reroll: {(await self.bot.get_prefix(msg))[-1]}gw reroll {giveaway.messageid} | Ended at"
         )
         try:
             await msg.edit(
-                content="🎉 Soutěž skončila 🎉",
+                content="🎉 Giveaway Ended 🎉",
                 embed=embed,
             )
-        except (discord.NotFound, discord.Forbidden):
+        except (discord.NotFound, discord.Forbidden) as exc:
+            log.error("Error editing giveaway message: ", exc_info=exc)
             async with self.config.custom(
                 GIVEAWAY_KEY, giveaway.guildid, int(giveaway.messageid)
             ).entrants() as entrants:
@@ -144,16 +145,16 @@ class Giveaways(commands.Cog):
             return
         if giveaway.kwargs.get("announce"):
             announce_embed = discord.Embed(
-                title="Soutěž skončila",
-                description=f"Gratulace patří {f'{str(winners)} ' if winners > 1 else ''}uživateli{'/ům' if winners > 1 else ''}, protože vyhrál [{giveaway.prize}]({msg.jump_url}).\n{txt}",
+                title="Giveaway Ended",
+                description=f"Congratulations to the {f'{str(winners)} ' if winners > 1 else ''}winner{'s' if winners > 1 else ''} of [{giveaway.prize}]({msg.jump_url}).\n{txt}",
                 color=await self.bot.get_embed_color(channel_obj),
             )
 
             announce_embed.set_footer(
-                text=f"Vylosovat znovu: {(await self.bot.get_prefix(msg))[-1]}gw reroll {giveaway.messageid}"
+                text=f"Reroll: {(await self.bot.get_prefix(msg))[-1]}gw reroll {giveaway.messageid}"
             )
             await channel_obj.send(
-                content="Gratuluji " + ",".join([x.mention for x in winner_objs])
+                content="Congratulations " + ",".join([x.mention for x in winner_objs])
                 if winner_objs is not None
                 else "",
                 embed=announce_embed,
@@ -165,7 +166,7 @@ class Giveaways(commands.Cog):
                 for winner in winner_objs:
                     with contextlib.suppress(discord.Forbidden):
                         await winner.send(
-                            f"Gratuluji! Vyhrál jsi {giveaway.prize} v soutěži na Discord serveru {guild}!"
+                            f"Congratulations! You won {giveaway.prize} in the giveaway on {guild}!"
                         )
             async with self.config.custom(
                 GIVEAWAY_KEY, giveaway.guildid, int(giveaway.messageid)
@@ -173,8 +174,8 @@ class Giveaways(commands.Cog):
                 entrants = [x for x in entrants if x != winner]
         return
 
-    @commands.group(aliases=["gw"])
-    @commands.bot_has_permissions(add_reactions=True)
+    @commands.hybrid_group(aliases=["gw"])
+    @commands.bot_has_permissions(add_reactions=True, embed_links=True)
     @commands.has_permissions(manage_guild=True)
     async def giveaway(self, ctx: commands.Context):
         """
@@ -182,6 +183,11 @@ class Giveaways(commands.Cog):
         """
 
     @giveaway.command()
+    @app_commands.describe(
+        channel="The channel in which to start the giveaway.",
+        time="The time the giveaway should last.",
+        prize="The prize for the giveaway.",
+    )
     async def start(
         self,
         ctx: commands.Context,
@@ -199,7 +205,7 @@ class Giveaways(commands.Cog):
         end = datetime.now(timezone.utc) + time
         embed = discord.Embed(
             title=f"{prize}",
-            description=f"\nReaguj pomocí 🎉 pro vstup\n\n**Hostuje:** {ctx.author.mention}\n\nKončí: <t:{int(end.timestamp())}:R>",
+            description=f"\nReact with 🎉 to enter\n\n**Hosted by:** {ctx.author.mention}\n\nEnds: <t:{int(end.timestamp())}:R>",
             color=await ctx.embed_color(),
         )
         msg = await channel.send(embed=embed)
@@ -212,6 +218,8 @@ class Giveaways(commands.Cog):
             "🎉",
             **{"congratulate": True, "notify": True},
         )
+        if ctx.interaction:
+            await ctx.send("Giveaway created!", ephemeral=True)
         self.giveaways[msg.id] = giveaway_obj
         await msg.add_reaction("🎉")
         giveaway_dict = deepcopy(giveaway_obj.__dict__)
@@ -219,6 +227,7 @@ class Giveaways(commands.Cog):
         await self.config.custom(GIVEAWAY_KEY, str(ctx.guild.id), str(msg.id)).set(giveaway_dict)
 
     @giveaway.command()
+    @app_commands.describe(msgid="The message ID of the giveaway to end.")
     async def reroll(self, ctx: commands.Context, msgid: int):
         """Reroll a giveaway."""
         data = await self.config.custom(GIVEAWAY_KEY, ctx.guild.id).all()
@@ -241,6 +250,7 @@ class Giveaways(commands.Cog):
             await ctx.tick()
 
     @giveaway.command()
+    @app_commands.describe(msgid="The message ID of the giveaway to end.")
     async def end(self, ctx: commands.Context, msgid: int):
         """End a giveaway."""
         if msgid in self.giveaways:
@@ -256,6 +266,9 @@ class Giveaways(commands.Cog):
             await ctx.send("Giveaway not found.")
 
     @giveaway.command(aliases=["adv"])
+    @app_commands.describe(
+        arguments="The arguments for the giveaway. See `[p]gw explain` for more info."
+    )
     async def advanced(self, ctx: commands.Context, *, arguments: Args):
         """Advanced creation of Giveaways.
 
@@ -293,7 +306,7 @@ class Giveaways(commands.Cog):
             emoji = self.bot.get_emoji(emoji)
         embed = discord.Embed(
             title=f"{f'{winners}x ' if winners > 1 else ''}{prize}",
-            description=f"{description}\n\nReaguj za pomocí {emoji} pro vstup do soutěže.\n\n**Hostuje:** {ctx.author.mention}\n\nKončí: <t:{int(end.timestamp())}:R>",
+            description=f"{description}\n\nReact with {emoji} to enter\n\n**Hosted by:** {ctx.author.mention}\n\nEnds: <t:{int(end.timestamp())}:R>",
             color=await ctx.embed_color(),
         )
         if arguments["image"] is not None:
@@ -318,6 +331,8 @@ class Giveaways(commands.Cog):
                 everyone=bool(arguments["ateveryone"]),
             ),
         )
+        if ctx.interaction:
+            await ctx.send("Giveaway created!", ephemeral=True)
 
         giveaway_obj = Giveaway(
             ctx.guild.id,
@@ -339,6 +354,7 @@ class Giveaways(commands.Cog):
         await self.config.custom(GIVEAWAY_KEY, str(ctx.guild.id), str(msg.id)).set(giveaway_dict)
 
     @giveaway.command()
+    @app_commands.describe(msgid="The message ID of the giveaway to edit.")
     async def entrants(self, ctx: commands.Context, msgid: int):
         """List all entrants for a giveaway."""
         if msgid not in self.giveaways:
@@ -369,6 +385,7 @@ class Giveaways(commands.Cog):
         return await menu(ctx, embeds, DEFAULT_CONTROLS)
 
     @giveaway.command()
+    @app_commands.describe(msgid="The message ID of the giveaway to edit.")
     async def info(self, ctx: commands.Context, msgid: int):
         """Information about a giveaway."""
         if msgid not in self.giveaways:
