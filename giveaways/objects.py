@@ -46,7 +46,7 @@ class Giveaway:
         self, user: discord.Member, *, bot, session
     ) -> Tuple[bool, GiveawayError]:
         if not self.kwargs.get("multientry", False) and user.id in self.entrants:
-            raise GiveawayEnterError("You have already entered this giveaway.")
+            raise GiveawayEnterError("Již jsi vstoupil do této soutěže.")
         if self.kwargs.get("roles", []) and all(
             int(role) not in [x.id for x in user.roles] for role in self.kwargs.get("roles", [])
         ):
