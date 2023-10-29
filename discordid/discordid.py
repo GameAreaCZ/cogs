@@ -11,5 +11,8 @@ class DiscordID(commands.Cog):
         """Get the discord ID of a user."""
         if member is None:
             member = ctx.author
-        embed = discord.Embed(title="Tvoje Discord ID", description=str(member.id), color=await ctx.embed_color())
+            nazev = "Tvoje Discord ID"
+        else:
+            nazev = ctx.author
+        embed = discord.Embed(title=nazev, description=str(member.id), color=await ctx.embed_color())
         await ctx.send(embed=embed)
